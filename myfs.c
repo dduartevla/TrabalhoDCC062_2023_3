@@ -624,6 +624,73 @@ int myFSLink(int fd, const char *filename, unsigned int inumber)
 // sucedido, ou -1 caso contrario.
 int myFSUnlink(int fd, const char *filename)
 {
+	// Verifica se o descritor de arquivo é válido
+	if (fd <= 0 || fd > MAX_FDS)
+	{
+		return -1; // Descritor de arquivo inválido
+	}
+
+	File *dirFile = files[fd - 1];
+	if (dirFile == NULL)
+	{
+		return -1; // Diretório não encontrado
+	}
+
+	// Verifica se o nome do arquivo é válido
+	if (strlen(filename) == 0 || strlen(filename) > MAX_FILENAME_LENGTH)
+	{
+		return -1; // Nome de arquivo inválido
+	}
+
+	// Número do bloco e posição dentro do bloco
+	unsigned int blockNum = dirFile->lastByteRead / DISK_SECTORDATASIZE;
+	unsigned int blockOffset = dirFile->lastByteRead % DISK_SECTORDATASIZE;
+
+	// Loop para encontrar a entrada de diretório com o nome especificado
+	DirectoryEntry currentEntry;
+	while (blockNum < inodeGetFileSize(dirFile->inode))
+	{
+		// Lê o bloco do diretório
+		unsigned char blockBuffer[DISK_SECTORDATASIZE];
+		if (diskReadSector(dirFile->disk, inodeGetBlockAddr(dirFile->inode, blockNum), blockBuffer) == -1)
+		{
+			return -1; // Falha na leitura
+		}
+
+		// Loop através das entradas de diretório no bloco
+		while (blockOffset < DISK_SECTORDATASIZE)
+		{
+			// Copia a entrada de diretório atual
+			memcpy(&currentEntry, blockBuffer + blockOffset, sizeof(DirectoryEntry));
+
+			// Verifica se é a entrada desejada
+			if (strncmp(currentEntry.filename, filename, MAX_FILENAME_LENGTH) == 0)
+			{
+				// Remove a entrada do bloco do diretório
+				memset(blockBuffer + blockOffset, 0, sizeof(DirectoryEntry));
+
+				// Escreve o bloco atualizado de volta no disco
+				if (diskWriteSector(dirFile->disk, inodeGetBlockAddr(dirFile->inode, blockNum), blockBuffer) == -1)
+				{
+					return -1; // Falha na escrita
+				}
+
+				// Atualiza o cursor
+				dirFile->lastByteRead = blockNum * DISK_SECTORDATASIZE + blockOffset;
+
+				return 0; // Remoção bem-sucedida
+			}
+
+			// Avança para a próxima entrada
+			blockOffset += sizeof(DirectoryEntry);
+		}
+
+		// Avança para o próximo bloco
+		blockNum++;
+		blockOffset = 0;
+	}
+
+	// Entrada não encontrada
 	return -1;
 }
 
@@ -631,7 +698,24 @@ int myFSUnlink(int fd, const char *filename)
 // arquivo existente. Retorna 0 caso bem sucedido, ou -1 caso contrario.
 int myFSCloseDir(int fd)
 {
-	return -1;
+	// Verifica se o descritor de arquivo é válido
+	if (fd <= 0 || fd > MAX_FDS)
+	{
+		return -1; // Descritor de arquivo inválido
+	}
+
+	File *dirFile = files[fd - 1];
+	if (dirFile == NULL)
+	{
+		return -1; // Diretório não encontrado
+	}
+
+	// Libera a estrutura de arquivo associada ao diretório
+	files[fd - 1] = NULL;
+	free(dirFile->inode);
+	free(dirFile);
+
+	return 0; // Fechamento bem-sucedido
 }
 
 // Funcao para instalar seu sistema de arquivos no S.O., registrando-o junto
