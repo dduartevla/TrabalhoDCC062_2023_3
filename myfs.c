@@ -1,14 +1,15 @@
 /*
-*  myfs.c - Implementacao do sistema de arquivos MyFS
-*
-*  Autores: Arthur de Freitas Dornelas
-			João Cotta Badaró
-			Vinicius da Cruz Soranço
-*  Projeto: Trabalho Pratico II - Sistemas Operacionais
-*  Organizacao: Universidade Federal de Juiz de Fora
-*  Departamento: Dep. Ciencia da Computacao
-*
-*/
+ *  myfs.c - Implementacao do sistema de arquivos MyFS
+ *
+ *  Autores: Débora Izabel Rocha Duarte
+ *           Michel  Gomes de Andrade
+ *  Projeto: Trabalho Pratico - Sistemas Operacionais
+ *  Semestre: 2023-3
+ *  Professor: Marcelo Moreno
+ *  Organizacao: Universidade Federal de Juiz de Fora
+ *  Departamento: Dep. Ciencia da Computacao
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
